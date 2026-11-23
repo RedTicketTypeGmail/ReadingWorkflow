@@ -1,0 +1,229 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reading</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+    <script defer
+            src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="brand" href="/">
+                <span class="brand-icon">R</span>
+                <span>Read & Grow<small>영어 독해</small></span>
+            </a>
+            <button id="restart" class="ghost" hidden>새 기사 찾기</button>
+        </header>
+
+        <nav class="steps" aria-label="학습 단계">
+            <span data-step="1">01 기사 선택</span>
+            <span data-step="2">02 문제 풀기</span>
+            <span data-step="3">03 추가 지식</span>
+        </nav>
+
+        <div id="notice" class="notice" role="alert" hidden></div>
+
+        <div id="busy" class="busy" role="status" hidden>
+            <span class="spinner"></span>
+            <span id="busy-text"></span>
+        </div>
+
+        <!-- 진행될 화면 -->
+        <main id="view"></main>
+
+
+        <!-- 시작 화면 -->
+        <template id="tpl-home">
+            <section class="hero">
+                <div class="eyebrow">YOUR DAILY READING SPACE</div>
+                <h1>세상의 이야기를 읽으며,<br>영어의 깊이를 더하세요.</h1>
+                <p class="muted">
+                    관심 있는 뉴스를 읽고 자신의 언어로 답해보세요.<br>
+                    막히는 부분은 추가 질문으로 함께 풀어갑니다.
+                </p>
+                <button type="button" data-action="start">
+                    오늘의 기사 찾아보기
+                </button>
+            </section>
+        </template>
+
+
+        <!-- 기사 선택 화면 -->
+        <template id="tpl-selection">
+            <section>
+                <div class="eyebrow">CHOOSE YOUR STORY</div>
+                <h1>어떤 이야기가 궁금한가요?</h1>
+                <p class="muted">
+                    읽고 싶은 기사를 선택하면 독해 문제가 준비됩니다.
+                </p>
+                <div class="cards" data-role="article-list"></div>
+            </section>
+        </template>
+
+
+        <!-- 기사 선택 카드 -->
+        <template id="tpl-article-card">
+            <button type="button" class="card">
+                <span class="card-number" data-role="number"></span>
+                <strong data-role="title"></strong>
+                <span class="muted">이 기사로 학습 시작하기</span>
+            </button>
+        </template>
+
+
+        <!-- 기사와 문제 풀이 화면 -->
+        <template id="tpl-session">
+            <div class="workspace">
+                <article class="panel article-panel">
+                    <div class="eyebrow">READING ROOM</div>
+                    <h2 data-role="article-title"></h2>
+
+                    <a class="source"
+                       data-role="source-link"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       hidden>원문 기사 보기</a>
+
+                    <div class="article-body prewrap" data-role="article-text"></div>
+                </article>
+
+                <section class="panel answer-panel">
+                    <div class="row">
+                        <div class="eyebrow">YOUR UNDERSTANDING</div>
+                        <span class="muted" data-role="progress-label"></span>
+                    </div>
+
+                    <progress data-role="progress"
+                              aria-label="문제 해결 진행률"></progress>
+
+                    <h2 class="section" data-role="heading"></h2>
+
+                    <p class="muted" data-role="followup-guide" hidden></p>
+
+                    <form id="answers-form">
+                        <div data-role="question-list"></div>
+
+                        <button class="full"
+                                type="submit"
+                                data-role="submit-button"
+                                hidden></button>
+
+                        <div data-role="retry-controls" hidden>
+                            <p class="muted">
+                                다시 입력할 필요 없이 평가만 재시도할 수 있습니다.
+                            </p>
+                            <button type="button" class="full" data-action="retry">
+                                평가 재시도
+                            </button>
+                        </div>
+
+                        <p class="muted" data-role="stopped-guide" hidden></p>
+                    </form>
+                </section>
+            </div>
+        </template>
+
+
+        <!-- 개별 문제 -->
+        <template id="tpl-question">
+            <section class="question">
+                <div class="row">
+                    <span class="eyebrow" data-role="number"></span>
+                    <span class="badge" data-role="status"></span>
+                </div>
+
+                <p class="question-title prewrap" data-role="question-text"></p>
+
+                <div class="history prewrap"
+                     data-role="initial-answer"
+                     hidden></div>
+
+                <details class="history" data-role="history" hidden>
+                    <summary data-role="history-summary"></summary>
+                    <div data-role="history-list"></div>
+                </details>
+
+                <div class="hint prewrap" data-role="followup-question" hidden></div>
+
+                <div data-role="answer-input" hidden>
+                    <label class="muted" data-role="answer-label">나의 답변</label>
+                    <textarea data-role="answer-textarea"
+                              placeholder="기사에서 근거를 찾아 자유롭게 작성하세요."></textarea>
+                </div>
+
+                <div class="answer" data-role="model-answer-box" hidden>
+                    <strong>모범 답안</strong>
+                    <div class="prewrap" data-role="model-answer"></div>
+                </div>
+            </section>
+        </template>
+
+
+        <!-- 추가 질문 기록 -->
+        <template id="tpl-history-item">
+            <div class="history-entry">
+                <p class="prewrap" data-role="question"></p>
+                <p class="prewrap" data-role="answer"></p>
+            </div>
+        </template>
+
+
+        <!-- 학습 완료 후 해설 및 다음 주제 -->
+        <template id="tpl-completion">
+            <section class="panel section">
+                <div class="eyebrow">REVIEW & DISCOVER</div>
+                <h2>이해한 내용을 더 넓혀보세요</h2>
+
+                <details>
+                    <summary>기사 전체 번역</summary>
+                    <div class="prewrap" data-role="translation"></div>
+                </details>
+
+                <div data-role="knowledge-list"></div>
+            </section>
+
+            <section class="section">
+                <div class="eyebrow">KEEP YOUR CURIOSITY</div>
+                <h2>다음 이야기는 어디로 이어질까요?</h2>
+
+                <div class="cards" data-role="topic-list"></div>
+
+                <form id="interest-form" class="interest-form">
+                    <input id="interest"
+                           required
+                           aria-label="직접 입력하는 관심 주제"
+                           placeholder="다른 궁금증이 있나요? 관심 주제를 직접 입력하세요.">
+                    <button type="submit">관련 기사 찾아보기</button>
+                </form>
+            </section>
+        </template>
+
+
+        <!-- 추가 지식 -->
+        <template id="tpl-knowledge-item">
+            <details>
+                <summary data-role="title"></summary>
+                <div class="prewrap" data-role="content"></div>
+            </details>
+        </template>
+
+
+        <!-- 관련 주제 카드 -->
+        <template id="tpl-topic-card">
+            <button type="button" class="card">
+                <span class="card-number" data-role="number"></span>
+                <strong data-role="title"></strong>
+                <span class="muted" data-role="summary"></span>
+                <span class="muted" data-role="connection"></span>
+            </button>
+        </template>
+
+        <footer>
+        </footer>
+    </div>
+</body>
+</html>
